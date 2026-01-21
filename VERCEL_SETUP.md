@@ -1,65 +1,66 @@
 # Vercel 배포 설정 가이드
 
-## 백엔드 URL
-```
-https://medical-article-aggregator.onrender.com
-```
+## 문제: 404 NOT_FOUND 오류
 
-## Vercel 환경 변수 설정 방법
+Vercel이 프로젝트 루트에서 빌드를 시도하지만, 실제 프론트엔드는 `frontend` 디렉토리에 있어서 발생하는 문제입니다.
 
-### 1. Vercel 대시보드 접속
-1. [Vercel](https://vercel.com/)에 로그인
-2. 프로젝트 선택 (`medical-article-aggregator`)
+## 해결 방법: Vercel 대시보드에서 Root Directory 설정
 
-### 2. 환경 변수 추가
-1. 프로젝트 → **Settings** → **Environment Variables**
-2. 다음 변수 추가:
+### 1단계: Vercel 대시보드 접속
 
-   | Name | Value |
-   |------|-------|
-   | `VITE_API_URL` | `https://medical-article-aggregator.onrender.com/api` |
+https://vercel.com/dashboard 로 이동
 
-3. Environment: **Production**, **Preview**, **Development** 모두 선택
-4. "Save" 클릭
+### 2단계: 프로젝트 설정
 
-### 3. 재배포
-환경 변수를 추가한 후 반드시 재배포해야 적용됩니다:
+1. 프로젝트 선택 (medical-article-aggregator)
+2. **Settings** 탭 클릭
+3. **General** 메뉴 선택
+
+### 3단계: Root Directory 설정
+
+1. **Root Directory** 섹션 찾기
+2. **Edit** 버튼 클릭
+3. 입력란에 `frontend` 입력
+4. **Save** 클릭
+
+### 4단계: 빌드 설정 확인
+
+**Build & Development Settings** 섹션에서:
+- **Build Command**: `npm run build` (자동 감지됨)
+- **Output Directory**: `dist` (자동 감지됨)
+- **Install Command**: `npm install` (자동 감지됨)
+
+### 5단계: 환경 변수 확인
+
+**Environment Variables** 섹션에서:
+- **Key**: `VITE_API_URL`
+- **Value**: `https://medical-article-aggregator.onrender.com/api`
+- **Environments**: Production, Preview, Development 모두 체크
+
+### 6단계: 재배포
 
 1. **Deployments** 탭으로 이동
 2. 최신 배포 찾기
-3. 오른쪽 메뉴 (⋯) 클릭
+3. 우측 메뉴(...) 클릭
 4. **Redeploy** 선택
-5. "Redeploy" 버튼 클릭
+5. **Redeploy** 버튼 클릭
 
-### 4. 확인
-재배포가 완료되면:
-1. Vercel이 제공한 URL로 접속 (예: `https://medical-article-aggregator.vercel.app`)
-2. 브라우저 개발자 도구 (F12) → Console 탭 확인
-3. 에러가 없으면 성공!
+## 배포 후 확인
 
-## 문제 해결
+1. 빌드 로그에서 성공 메시지 확인
+2. 배포된 URL로 접속
+3. 브라우저 개발자 도구(F12) 열기
+4. 콘솔에 오류가 없는지 확인
+5. "기사 수집" 버튼 클릭하여 API 연결 테스트
 
-### API 연결 에러
-- Render 백엔드가 실행 중인지 확인: https://medical-article-aggregator.onrender.com/api/articles/stats
-- Render 무료 플랜은 15분 비활동 후 sleep 상태가 됩니다 (첫 요청 시 30초~1분 소요)
-- 환경 변수가 올바르게 설정되었는지 확인
+## 예상 결과
 
-### CORS 에러
-백엔드 `app/__init__.py`에서 CORS가 올바르게 설정되어 있어야 합니다:
-```python
-CORS(app)  # 모든 origin 허용
-```
+- ✅ 페이지가 정상적으로 로드됨
+- ✅ UI가 올바르게 표시됨
+- ✅ 백엔드 API와 통신 가능 (CORS 해결됨)
 
-### Render 백엔드 Sleep 방지
-Render 무료 플랜은 15분 비활동 후 sleep됩니다. 방지 방법:
-1. UptimeRobot 같은 서비스로 5분마다 ping
-2. Render 유료 플랜 ($7/월)으로 업그레이드
+## 문제가 계속되는 경우
 
-## 다음 단계
-
-1. ✅ 백엔드 배포 완료 (Render)
-2. ⏳ Vercel 환경 변수 설정
-3. ⏳ Vercel 재배포
-4. ⏳ 사이트 확인 및 테스트
-
-배포 완료 후 데이터베이스가 비어있을 수 있습니다. Render 대시보드에서 환경 변수가 올바르게 설정되었는지 확인하고, 프론트엔드에서 "기사 수집" 버튼을 눌러 데이터를 수집하세요.
+1. Vercel 빌드 로그 확인
+2. 브라우저 콘솔에서 오류 메시지 확인
+3. Root Directory가 `frontend`로 올바르게 설정되었는지 재확인
