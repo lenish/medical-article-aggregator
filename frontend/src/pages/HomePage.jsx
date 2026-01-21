@@ -20,7 +20,7 @@ import SearchIcon from '@mui/icons-material/Search'
 import ClearIcon from '@mui/icons-material/Clear'
 import ArticleCard from '../components/ArticleCard'
 import StatsPanel from '../components/StatsPanel'
-import { getArticles, getCategories, getSources, getStats, collectArticles } from '../services/api'
+import { getArticles, getCategories, getSources, getStats, collectArticles, collectHistoricalArticles } from '../services/api'
 
 function HomePage() {
   const [articles, setArticles] = useState([])
@@ -29,6 +29,7 @@ function HomePage() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [collecting, setCollecting] = useState(false)
+  const [collectingHistorical, setCollectingHistorical] = useState(false)
   const [error, setError] = useState(null)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -108,6 +109,31 @@ function HomePage() {
       alert(fullMessage)
     } finally {
       setCollecting(false)
+    }
+  }
+
+  const handleCollectHistorical = async () => {
+    if (!window.confirm('과거 7일치 기사를 수집하시겠습니까?\n(실행 시간: 약 30-60초)')) {
+      return
+    }
+
+    try {
+      setCollectingHistorical(true)
+      const result = await collectHistoricalArticles()
+      alert(
+        `과거 7일치 기사 수집 완료!\n` +
+        `기간: ${result.period}\n` +
+        `수집: ${result.collected}개\n` +
+        `저장: ${result.saved}개\n` +
+        `중복 제외: ${result.skipped}개`
+      )
+      fetchData()
+    } catch (err) {
+      console.error(err)
+      const errorMessage = err.response?.data?.error || '과거 기사 수집 중 오류가 발생했습니다.'
+      alert(errorMessage)
+    } finally {
+      setCollectingHistorical(false)
     }
   }
 
@@ -269,9 +295,18 @@ function HomePage() {
                 variant="outlined"
                 startIcon={<RefreshIcon />}
                 onClick={handleCollect}
-                disabled={collecting}
+                disabled={collecting || collectingHistorical}
               >
                 {collecting ? '수집 중...' : '기사 수집'}
+              </Button>
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<RefreshIcon />}
+                onClick={handleCollectHistorical}
+                disabled={collecting || collectingHistorical}
+              >
+                {collectingHistorical ? '과거 수집 중...' : '과거 7일치 수집'}
               </Button>
             </Stack>
           </Grid>

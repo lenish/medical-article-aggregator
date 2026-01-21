@@ -51,4 +51,10 @@ export const collectArticles = async () => {
   return response.data
 }
 
+// 과거 7일치 기사 수집
+export const collectHistoricalArticles = async () => {
+  const response = await api.post('/scheduler/collect-historical')
+  return response.data
+}
+
 export default api
