@@ -12,7 +12,19 @@ def create_app(config_name='default'):
 
     # 확장 초기화
     db.init_app(app)
-    CORS(app)
+
+    # CORS 설정 - Vercel 프론트엔드 및 로컬 개발 허용
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": [
+                "https://*.vercel.app",  # 모든 Vercel 배포 허용
+                "http://localhost:3000",  # 로컬 개발
+                "http://localhost:5173"   # Vite 기본 포트
+            ],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type"]
+        }
+    })
 
     # 블루프린트 등록
     from app.routes import articles, scheduler, sources
