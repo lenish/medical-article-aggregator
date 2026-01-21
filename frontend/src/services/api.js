@@ -27,6 +27,12 @@ export const getCategories = async () => {
   return response.data
 }
 
+// 언론사 목록 조회
+export const getSources = async () => {
+  const response = await api.get('/sources/')
+  return response.data
+}
+
 // 통계 조회
 export const getStats = async () => {
   const response = await api.get('/articles/stats')

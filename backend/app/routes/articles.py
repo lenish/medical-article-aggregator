@@ -15,7 +15,10 @@ def get_articles():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         category = request.args.get('category', None)
+        source = request.args.get('source', None)
         date_from = request.args.get('date_from', None)
+        date_to = request.args.get('date_to', None)
+        keyword = request.args.get('keyword', None)
 
         # 기본 쿼리: 의료 기사만
         query = Article.query.filter_by(is_medical=True)
@@ -24,13 +27,37 @@ def get_articles():
         if category:
             query = query.filter_by(category=category)
 
-        # 날짜 필터
+        # 언론사 필터
+        if source:
+            query = query.filter(Article.source.ilike(f'%{source}%'))
+
+        # 날짜 필터 (시작)
         if date_from:
             try:
                 date_obj = datetime.fromisoformat(date_from)
                 query = query.filter(Article.published_date >= date_obj)
             except ValueError:
-                return jsonify({'error': '잘못된 날짜 형식'}), 400
+                return jsonify({'error': '잘못된 날짜 형식 (date_from)'}), 400
+
+        # 날짜 필터 (종료)
+        if date_to:
+            try:
+                date_obj = datetime.fromisoformat(date_to)
+                # 해당 날짜의 끝까지 포함
+                date_obj = date_obj + timedelta(days=1)
+                query = query.filter(Article.published_date < date_obj)
+            except ValueError:
+                return jsonify({'error': '잘못된 날짜 형식 (date_to)'}), 400
+
+        # 키워드 필터 (제목 또는 설명에서 검색)
+        if keyword:
+            search_pattern = f"%{keyword}%"
+            query = query.filter(
+                db.or_(
+                    Article.title.ilike(search_pattern),
+                    Article.description.ilike(search_pattern)
+                )
+            )
 
         # 최신순 정렬
         query = query.order_by(Article.published_date.desc())
@@ -56,11 +83,12 @@ def get_articles():
 def get_today_articles():
     """오늘의 의료 기사 조회"""
     try:
-        today = datetime.utcnow().date()
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow = today + timedelta(days=1)
 
         articles = Article.query.filter(
             Article.is_medical == True,
+            Article.published_date.isnot(None),
             Article.published_date >= today,
             Article.published_date < tomorrow
         ).order_by(Article.published_date.desc()).all()
@@ -68,7 +96,7 @@ def get_today_articles():
         return jsonify({
             'articles': [article.to_dict() for article in articles],
             'total': len(articles),
-            'date': today.isoformat()
+            'date': today.date().isoformat()
         })
 
     except Exception as e:
@@ -100,10 +128,11 @@ def get_stats():
     try:
         total_articles = Article.query.filter_by(is_medical=True).count()
 
-        today = datetime.utcnow().date()
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow = today + timedelta(days=1)
         today_articles = Article.query.filter(
             Article.is_medical == True,
+            Article.published_date.isnot(None),
             Article.published_date >= today,
             Article.published_date < tomorrow
         ).count()
@@ -116,7 +145,7 @@ def get_stats():
             Article.is_medical == True
         ).group_by(Article.category).all()
 
-        category_counts = {cat: count for cat, count in category_stats}
+        category_counts = {(cat if cat else '미분류'): count for cat, count in category_stats}
 
         return jsonify({
             'total_articles': total_articles,
@@ -125,7 +154,9 @@ def get_stats():
         })
 
     except Exception as e:
+        import traceback
         logger.error(f"통계 조회 중 오류: {e}")
+        logger.error(traceback.format_exc())
         return jsonify({'error': '통계 조회 실패'}), 500
 
 @bp.route('/<int:article_id>', methods=['GET'])

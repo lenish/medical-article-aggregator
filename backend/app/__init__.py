@@ -15,9 +15,10 @@ def create_app(config_name='default'):
     CORS(app)
 
     # 블루프린트 등록
-    from app.routes import articles, scheduler
+    from app.routes import articles, scheduler, sources
     app.register_blueprint(articles.bp)
     app.register_blueprint(scheduler.bp)
+    app.register_blueprint(sources.bp)
 
     # 데이터베이스 초기화
     with app.app_context():
