@@ -54,15 +54,15 @@ class ArticleClassifier:
         max_possible_score = len(self.medical_keywords) * 2.0
         confidence_score = min(score / max_possible_score, 1.0) if max_possible_score > 0 else 0.0
 
-        # 3단계: 의료 기사 판단 (신뢰도 0.1 이상)
-        is_medical = confidence_score >= 0.1 and len(found_keywords) >= 1
+        # 신뢰도 보정: 키워드가 많을수록 신뢰도 증가 (필터링 전에 적용)
+        if len(found_keywords) >= 1:
+            confidence_score = max(confidence_score, min(0.5 + (len(found_keywords) * 0.1), 1.0))
+
+        # 3단계: 의료 기사 판단 (신뢰도 0.04 이상)
+        is_medical = confidence_score >= 0.04 and len(found_keywords) >= 1
 
         # 4단계: 카테고리 분류
         category = self._classify_category(text) if is_medical else None
-
-        # 신뢰도 보정: 키워드가 많을수록 신뢰도 증가
-        if is_medical:
-            confidence_score = min(0.5 + (len(found_keywords) * 0.1), 1.0)
 
         logger.debug(f"분류 결과 - 의료: {is_medical}, 카테고리: {category}, 신뢰도: {confidence_score:.2f}, 키워드: {found_keywords}")
 

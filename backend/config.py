@@ -26,7 +26,7 @@ class Config:
     ]
 
     # 기사 수집 설정
-    MAX_ARTICLES_PER_DAY = 100
+    MAX_ARTICLES_PER_DAY = 500  # 100에서 500으로 증가
     ARTICLE_COLLECTION_TIME = "09:00"  # 매일 수집 시간
 
 class DevelopmentConfig(Config):
